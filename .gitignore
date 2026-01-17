@@ -114,7 +114,6 @@ secrets/
 credentials.json
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # Miscellaneous
