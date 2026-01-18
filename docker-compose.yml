@@ -1,28 +1,6 @@
 version: "3.8"
 
 services:
-  # MySQL Database Service
-  mysql:
-    image: mysql:8.0
-    container_name: feedback-tool-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - feedback-network
-
   # Backend API Service
   backend:
     build:
@@ -31,16 +9,21 @@ services:
     container_name: feedback-tool-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      # Database configuration - connects to external MySQL container
+      # Use host.docker.internal to access MySQL running on host
+      DB_USER: ${DB_USER:-backend_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-my_app_db}
+      # JWT Authentication
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      CORS_ORIGINS: ${CORS_ORIGINS}
+      # CORS Configuration
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
       - feedback-network
     healthcheck:
@@ -55,6 +38,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    # Extra hosts to access host machine's MySQL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Frontend Service
   frontend:
@@ -83,11 +69,6 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
-
-# Named volumes for data persistence
-volumes:
-  mysql_data:
-    driver: local
 
 # Network for service communication
 networks:
