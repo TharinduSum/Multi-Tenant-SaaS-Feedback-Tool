@@ -30,8 +30,8 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
 
-# Expose port 80
-EXPOSE 80
+# Expose port 5173
+EXPOSE 5173
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
