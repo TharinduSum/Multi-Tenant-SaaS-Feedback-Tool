@@ -11,11 +11,11 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     # Construct DATABASE_URL from individual components
-    db_user = os.getenv("DB_USER", "backend_user")
-    db_password = os.getenv("DB_PASSWORD", "N!xa(@vYG#NI")
-    db_host = os.getenv("DB_HOST", "127.0.0.1")
-    db_port = os.getenv("DB_PORT", "3306")
-    db_name = os.getenv("DB_NAME", "my_app_db")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+    db_name = os.getenv("DB_NAME")
     
     if not all([db_user, db_password, db_host, db_port, db_name]):
         raise ValueError(
