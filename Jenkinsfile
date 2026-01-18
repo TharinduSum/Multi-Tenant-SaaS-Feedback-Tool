@@ -39,6 +39,7 @@ pipeline {
             steps {
                 script {
                     echo "Setting up environment..."
+                    sh 'chmod 666 /var/run/docker.sock || true'
                     sh '''
                         echo "Docker version:"
                         docker --version
