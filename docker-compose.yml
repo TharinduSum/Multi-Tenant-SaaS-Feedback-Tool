@@ -1,6 +1,29 @@
 version: "3.8"
 
 services:
+  # MySQL Database Service
+  database:
+    image: mysql:8.0
+    container_name: my-mysql-server
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-vp,ng_FE2kor}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-my_app_db}
+      MYSQL_USER: ${MYSQL_USER:-backend_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-N!xa(@vYG#NI}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - feedback-network
+
   # Backend API Service
   backend:
     build:
@@ -9,11 +32,10 @@ services:
     container_name: feedback-tool-backend
     restart: unless-stopped
     environment:
-      # Database configuration - connects to external MySQL container
-      # Use host.docker.internal to access MySQL running on host
+      # Database configuration - connects to MySQL service
       DB_USER: ${DB_USER:-backend_user}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PASSWORD: ${DB_PASSWORD:-N!xa(@vYG#NI}
+      DB_HOST: ${DB_HOST:-database}
       DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:-my_app_db}
       # JWT Authentication
@@ -24,6 +46,9 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      database:
+        condition: service_healthy
     networks:
       - feedback-network
     healthcheck:
@@ -38,9 +63,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Extra hosts to access host machine's MySQL
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   # Frontend Service
   frontend:
@@ -69,6 +91,11 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+
+# Named volumes for data persistence
+volumes:
+  mysql_data:
+    driver: local
 
 # Network for service communication
 networks:
