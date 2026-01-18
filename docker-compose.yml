@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # MySQL Database Service
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.44
     container_name: feedback-tool-mysql
     restart: unless-stopped
     environment:
