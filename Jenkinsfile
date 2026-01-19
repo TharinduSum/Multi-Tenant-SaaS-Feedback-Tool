@@ -2,20 +2,22 @@ pipeline {
     agent any
 
     environment {
-        // Docker Hub account details
+        // Docker Hub account identification
         DOCKER_HUB_USER = 'tharindusum'
         FRONTEND_REPO   = 'feedback-frontend'
         BACKEND_REPO    = 'feedback-backend'
         
-        // The ID of the credentials you created in Jenkins
+        // The ID of the credentials you created in the Jenkins UI
         DOCKER_HUB_CREDS_ID = 'docker-hub-credentials'
+        
+        // Explicitly defining the PATH to ensure Jenkins can find the 'docker' command on macOS
         PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Source Code') {
             steps {
-                // Pull the latest code from your Git repository
+                // Pulls the latest code from the GitHub repository configured in the Job
                 checkout scm
             }
         }
@@ -23,16 +25,18 @@ pipeline {
         stage('Build & Push Frontend') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile inside the './frontend' directory
-                    // The image is tagged as 'latest' by default here
-                    def frontendImg = docker.build("${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest", "./frontend")
+                    // 1. Build the frontend image using the Dockerfile in the /frontend directory
+                    // Tags it with 'latest' and the specific Jenkins Build Number
+                    sh "docker build -t ${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest -t ${DOCKER_HUB_USER}/${FRONTEND_REPO}:${env.BUILD_NUMBER} ./frontend"
                     
-                    // Log in to Docker Hub and push the image
-                    docker.withRegistry('', DOCKER_HUB_CREDS_ID) {
-                        // Push the 'latest' version
-                        frontendImg.push()
-                        // Also push a version tagged with the Jenkins Build Number for history
-                        frontendImg.push("${env.BUILD_NUMBER}")
+                    // 2. Authenticate and push to Docker Hub
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS_ID}", passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        // Securely log in using the credentials defined in environment
+                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                        
+                        // Push both tags to the repository
+                        sh "docker push ${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest"
+                        sh "docker push ${DOCKER_HUB_USER}/${FRONTEND_REPO}:${env.BUILD_NUMBER}"
                     }
                 }
             }
@@ -41,15 +45,13 @@ pipeline {
         stage('Build & Push Backend') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile inside the './backend' directory
-                    def backendImg = docker.build("${DOCKER_HUB_USER}/${BACKEND_REPO}:latest", "./backend")
+                    // 1. Build the backend image using the Dockerfile in the /backend directory
+                    sh "docker build -t ${DOCKER_HUB_USER}/${BACKEND_REPO}:latest -t ${DOCKER_HUB_USER}/${BACKEND_REPO}:${env.BUILD_NUMBER} ./backend"
                     
-                    // Log in to Docker Hub and push the image
-                    docker.withRegistry('', DOCKER_HUB_CREDS_ID) {
-                        // Push the 'latest' version
-                        backendImg.push()
-                        // Also push a version tagged with the Jenkins Build Number
-                        backendImg.push("${env.BUILD_NUMBER}")
+                    // 2. Push to Docker Hub (Login is already active from the previous stage)
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS_ID}", passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        sh "docker push ${DOCKER_HUB_USER}/${BACKEND_REPO}:latest"
+                        sh "docker push ${DOCKER_HUB_USER}/${BACKEND_REPO}:${env.BUILD_NUMBER}"
                     }
                 }
             }
@@ -59,19 +61,19 @@ pipeline {
     post {
         always {
             script {
-                // Remove local images after pushing to save disk space on the Jenkins server
-                // The '|| true' ensures the pipeline doesn't fail if the image was already removed
+                // Cleanup: Delete local images to prevent your MacBook's disk from filling up
+                // '|| true' ensures the pipeline finishes even if an image was already deleted
                 sh "docker rmi ${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest ${DOCKER_HUB_USER}/${FRONTEND_REPO}:${env.BUILD_NUMBER} || true"
                 sh "docker rmi ${DOCKER_HUB_USER}/${BACKEND_REPO}:latest ${DOCKER_HUB_USER}/${BACKEND_REPO}:${env.BUILD_NUMBER} || true"
             }
-            // Clean up the workspace files
+            // Cleans up the temporary workspace folder
             cleanWs()
         }
         success {
-            echo 'Pipeline completed successfully: Images pushed to Docker Hub.'
+            echo 'SUCCESS: Both images were successfully pushed to Docker Hub.'
         }
         failure {
-            echo 'Pipeline failed: Please check the logs above for errors.'
+            echo 'FAILURE: The pipeline failed. Check the console output for specific errors.'
         }
     }
 }
