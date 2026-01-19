@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     
-                    def frontendImg = docker.build("${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest", "./front-end")
+                    def frontendImg = docker.build("${DOCKER_HUB_USER}/${FRONTEND_REPO}:latest", "./frontend")
                     
                     docker.withRegistry('', DOCKER_HUB_CREDS_ID) {
                         
@@ -39,7 +39,7 @@ pipeline {
             steps {
                 script {
                     
-                    def backendImg = docker.build("${DOCKER_HUB_USER}/${BACKEND_REPO}:latest", "./back-end")
+                    def backendImg = docker.build("${DOCKER_HUB_USER}/${BACKEND_REPO}:latest", "./backend")
                     
                     docker.withRegistry('', DOCKER_HUB_CREDS_ID) {
                         
