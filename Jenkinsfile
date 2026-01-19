@@ -9,6 +9,7 @@ pipeline {
         
         // The ID of the credentials you created in Jenkins
         DOCKER_HUB_CREDS_ID = 'docker-hub-credentials'
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
     }
 
     stages {
