@@ -19,7 +19,9 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Starting containers...'
+                echo 'Force removing conflicting container and starting fresh...'
+                
+                sh 'docker rm -f my-mysql-server || true'
                 sh 'docker-compose down'
                 // -d runs containers in the background
                 sh 'docker-compose up -d'
