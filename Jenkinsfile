@@ -13,7 +13,7 @@ pipeline {
             steps {
                 echo 'Building Docker images using Compose...'
                 // Build images without cache to ensure a fresh start
-                sh 'docker-compose build --no-cache'
+                sh 'docker-compose build'
             }
         }
 
