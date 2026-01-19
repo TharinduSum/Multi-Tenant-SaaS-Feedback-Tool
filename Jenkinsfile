@@ -19,10 +19,11 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Starting containers...'
-                // -d runs containers in the background
+                echo 'Cleaning up old containers and starting new ones...'
+
+                sh 'docker-compose down' 
+                
                 sh 'docker-compose up -d'
-            }
         }
 
         stage('Verify') {
